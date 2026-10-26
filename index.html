@@ -1,0 +1,576 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PC単純T桁橋 3Dモデル</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: full-bleed 3D stage; drawing-sheet overlays pinned to the corners — heading (TL), controls (TR), notes (BL), title block 表題欄 (BR) */
+:root{
+  --paper:#e8edeb; --scene:#dde4e2; --ink:#1a2528; --muted:#56666a; --line:#b4c0bf;
+  --panel:rgba(247,250,249,.93); --accent:#1c5b84; --accent-soft:rgba(28,91,132,.12); --on-accent:#ffffff;
+  --f-body:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11171a; --scene:#151c20; --ink:#dbe3e4; --muted:#93a3a6; --line:#34434a;
+    --panel:rgba(20,28,32,.92); --accent:#79b6de; --accent-soft:rgba(121,182,222,.16); --on-accent:#0d1a22;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11171a; --scene:#151c20; --ink:#dbe3e4; --muted:#93a3a6; --line:#34434a;
+  --panel:rgba(20,28,32,.92); --accent:#79b6de; --accent-soft:rgba(121,182,222,.16); --on-accent:#0d1a22;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);overflow:hidden;line-height:1.55}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;font:500 11px/1.3 var(--f-mono);color:var(--ink);
+  background:var(--panel);border:1px solid var(--line);padding:2px 6px;font-variant-numeric:tabular-nums}
+.lbl.dim{color:var(--accent);border-color:var(--accent)}
+.lbl.tag{font:700 12px/1.3 var(--f-body);letter-spacing:.04em}
+
+#hud{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr auto;gap:12px;
+  padding-block:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none}
+#hud>*{pointer-events:auto}
+
+.head{grid-column:1;grid-row:1;justify-self:start;align-self:start;max-width:32rem;background:var(--panel);border:1px solid var(--line);padding:10px 14px 11px}
+.eyebrow{font:500 11px/1.4 var(--f-mono);letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+h1{margin:2px 0 4px;font-size:1.3rem;line-height:1.3;font-weight:700;text-wrap:balance;letter-spacing:.02em}
+.hint{margin:0;font-size:12px;color:var(--muted)}
+.hint kbd{font:500 11px var(--f-mono);border:1px solid var(--line);padding:0 4px;color:var(--ink)}
+
+.panel{grid-column:2;grid-row:1 / span 2;align-self:start;width:17rem;max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line)}
+.panel summary{cursor:pointer;list-style:none;padding:9px 14px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+.panel summary::-webkit-details-marker{display:none}
+.panel summary::after{content:"＋";font-family:var(--f-mono);color:var(--muted)}
+.panel[open] summary::after{content:"－"}
+.panel .body{display:grid;gap:14px;padding:12px 14px 14px}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:7px;min-width:0}
+legend{padding:0;margin-bottom:6px;font:500 11px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line)}
+.seg button{font:inherit;font-size:12.5px;padding:6px 0;border:0;border-left:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button:hover{background:var(--accent-soft)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;min-width:0}
+.chk input{accent-color:var(--accent);margin:0}
+.range{display:grid;gap:3px;font-size:12.5px}
+.range .row{display:flex;justify-content:space-between;gap:8px}
+.range output{font:500 12px var(--f-mono);color:var(--accent);font-variant-numeric:tabular-nums}
+.range input{width:100%;accent-color:var(--accent)}
+.range input:disabled{opacity:.4}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.notes{grid-column:1;grid-row:3;justify-self:start;align-self:end;max-width:30rem;background:var(--panel);border:1px solid var(--line);font-size:12.5px}
+.notes summary{cursor:pointer;padding:7px 12px;font-weight:700;font-size:12.5px}
+.notes ul{margin:0;padding:0 14px 10px 28px;display:grid;gap:3px;max-height:38vh;overflow:auto}
+.notes li{color:var(--ink)}
+.notes .k{font-family:var(--f-mono);color:var(--accent)}
+
+/* 表題欄 */
+.tblock{grid-column:2;grid-row:3;align-self:end;width:17rem;background:var(--panel);border:2px solid var(--ink)}
+.tblock table{border-collapse:collapse;width:100%;font-size:12px}
+.tblock th,.tblock td{border:1px solid var(--ink);padding:3px 7px;text-align:left;vertical-align:top}
+.tblock tr:first-child th,.tblock tr:first-child td{border-top:0}
+.tblock th{width:4.6em;font-weight:400;color:var(--muted);border-left:0}
+.tblock td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;border-right:0}
+.tblock td.jp{font-family:var(--f-body);font-weight:700}
+.tblock tr:last-child th,.tblock tr:last-child td{border-bottom:0}
+
+#tip{position:fixed;left:0;top:0;max-width:16rem;background:var(--panel);border:1px solid var(--ink);padding:6px 9px;font-size:12px;pointer-events:none;z-index:5}
+#tip b{display:block;font-size:12.5px}
+#tip span{color:var(--muted)}
+#loading{position:fixed;inset:0;display:grid;place-items:center;font:500 12px var(--f-mono);color:var(--muted);pointer-events:none}
+
+@media (max-width:720px){
+  #hud{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr auto;gap:8px}
+  .head{grid-column:1;grid-row:1;max-width:none;justify-self:stretch;padding:8px 12px}
+  h1{font-size:1.1rem}
+  .panel{grid-column:1;grid-row:2;width:auto;justify-self:stretch;max-height:55vh}
+  .notes{grid-column:1;grid-row:4;max-width:none;justify-self:stretch}
+  .tblock{display:none}
+}
+</style>
+
+<div id="stage"></div>
+<div id="labels"></div>
+<div id="loading">モデルを読み込み中…</div>
+
+<div id="hud">
+  <header class="head">
+    <div class="eyebrow">図-5 対象図面 · 側面図／平面図／上部工断面図 S=1/100</div>
+    <h1>PC単純T桁橋 3Dモデル</h1>
+    <p class="hint"><kbd>ドラッグ</kbd> 回転　<kbd>右ドラッグ</kbd>・2本指 移動　<kbd>ホイール</kbd>・ピンチ 拡大縮小　部材にカーソルを合わせると名称と寸法を表示</p>
+  </header>
+
+  <details class="panel" id="panel" open>
+    <summary>表示設定</summary>
+    <div class="body">
+      <fieldset>
+        <legend>視点</legend>
+        <div class="seg" role="group" aria-label="視点">
+          <button type="button" id="v-iso" data-view="iso" aria-pressed="true">斜め</button>
+          <button type="button" id="v-side" data-view="side" aria-pressed="false">側面</button>
+          <button type="button" id="v-plan" data-view="plan" aria-pressed="false">平面</button>
+          <button type="button" id="v-section" data-view="section" aria-pressed="false">断面</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>表示する要素</legend>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" id="ly-super" checked>上部工</label>
+          <label class="chk"><input type="checkbox" id="ly-sub" checked>下部工</label>
+          <label class="chk"><input type="checkbox" id="ly-dims" checked>寸法・注記</label>
+          <label class="chk"><input type="checkbox" id="ly-edges" checked>輪郭線</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>横断方向に切断</legend>
+        <label class="chk"><input type="checkbox" id="cut-on">切断面を表示（A1側を除去）</label>
+        <div class="range">
+          <div class="row"><label for="cut-x">切断位置（A1桁端から）</label><output id="cut-out">9.600 m</output></div>
+          <input type="range" id="cut-x" min="0.2" max="19.0" step="0.05" value="9.6" disabled>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>形状・投影</legend>
+        <label class="chk"><input type="checkbox" id="skew-on" checked>斜角 63.5°（平面図から推定）</label>
+        <label class="chk"><input type="checkbox" id="ortho">平行投影（図面と同じ見え方）</label>
+      </fieldset>
+    </div>
+  </details>
+
+  <details class="notes" id="notes">
+    <summary>図面からの読み取り値と仮定</summary>
+    <ul>
+      <li>側面図: 橋長 <span class="k">19,200</span>、桁長 <span class="k">19,140</span>、支間 <span class="k">18,540</span>（桁端〜支承 300）、遊間 30</li>
+      <li>側面図: A1 橋台 高さ <span class="k">7,000</span>・フーチング幅 <span class="k">4,000</span>、A2 橋台 高さ <span class="k">9,000</span>・フーチング幅 <span class="k">5,000</span></li>
+      <li>断面図: 全幅 <span class="k">11,000</span> = 地覆 600 + 車道 7,500（4,000 + 3,500）+ 歩車道境界 200 + 歩道 2,300 + 地覆 400</li>
+      <li>断面図: 主桁 6本 <span class="k">5@1,840 = 9,200</span>、張出し 900、桁高 <span class="k">1,050</span>、車道横断勾配 1.5%（両側）、歩道 2.0%</li>
+      <li>推定: 斜角 63.5° は平面図の河川・橋台線の傾きから算出（図中に数値記載なし）。「斜角」のチェックを外すと直橋で表示</li>
+      <li>推定: 主桁の断面形状、床版厚、横桁の位置と厚さ、支承、橋台の壁厚、防護柵・高欄は縮尺からの読み取りと一般的な形状で補っています</li>
+      <li>省略: 縦断勾配（起終点の計画高の差はわずか）は水平として扱っています</li>
+      <li>表示範囲: 橋の構造物（上部工・橋台・フーチング）のみ。河川・地盤・取付道路・翼壁は除いています</li>
+    </ul>
+  </details>
+
+  <div class="tblock" aria-label="表題欄">
+    <table>
+      <tr><th>名称</th><td class="jp">PC単純T桁橋</td></tr>
+      <tr><th>橋長</th><td>19.200 m</td></tr>
+      <tr><th>支間</th><td>18.540 m</td></tr>
+      <tr><th>全幅員</th><td>11.000 m</td></tr>
+      <tr><th>主桁</th><td>6本 @1.840 / H1.050</td></tr>
+      <tr><th>下部工</th><td>A1 H7.0 / A2 H9.0</td></tr>
+      <tr><th>斜角</th><td id="tb-skew">63.5°（推定）</td></tr>
+      <tr><th>原図</th><td>S=1/100</td></tr>
+    </table>
+  </div>
+</div>
+<div id="tip" hidden></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = s => document.querySelector(s);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- renderer / scene ---------- */
+const stage = $('#stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const persp = new THREE.PerspectiveCamera(36, 1, 0.1, 600);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, -300, 600);
+let camera = persp;
+let orthoHalfH = 12;
+persp.position.set(-24, 9, 30);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(2, -3.8, 0);
+controls.maxDistance = 160;
+controls.minDistance = 2;
+
+scene.add(new THREE.HemisphereLight(0xf2f6ff, 0x6e604c, 1.0));
+const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+sun.position.set(-18, 32, 22);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 120 });
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.03;
+scene.add(sun);
+
+/* ---------- materials ---------- */
+const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.r ?? 0.85, metalness: o.m ?? 0, side: THREE.DoubleSide });
+const M = {
+  pc: std(0xdcd8cf), slab: std(0xcfcbc2), rc: std(0xbab7ae), footing: std(0xa7a49b),
+  asphalt: std(0x3c3f42, { r: 0.95 }), curb: std(0xd0ccc3), walk: std(0xa99f90),
+  steel: std(0x6f8291, { r: 0.45, m: 0.55 }), rubber: std(0x2b2b2b), wing: std(0xb3b0a7),
+};
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x263034, transparent: true, opacity: 0.42 });
+const dimMat = new THREE.LineBasicMaterial({ color: 0x1c5b84, depthTest: false, transparent: true });
+
+/* ---------- geometry helpers (design coords: x = along bridge from A1 girder-end line, y = up from road crown, z = across from left edge 0..11) ---------- */
+const ZC = 4.6;                       // road centreline from left edge
+const SKEW_DEG = 63.5;
+let K = 1 / Math.tan(SKEW_DEG * Math.PI / 180);
+const sx = z => K * (z - ZC);         // skew shift of support lines
+
+function tri(a, A, B, C) { a.push(A[0], A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2]); }
+function quad(a, A, B, C, D) { tri(a, A, B, C); tri(a, A, C, D); }
+function geom(arr) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+  g.computeVertexNormals();
+  return g;
+}
+// polygon prism: poly = [[a,b],...], map(a,b,t) -> [x,y,z], t ∈ {0,1}
+function prism(arr, poly, map) {
+  const tris = THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p[0], p[1])), []);
+  const P0 = poly.map(p => map(p[0], p[1], 0)), P1 = poly.map(p => map(p[0], p[1], 1));
+  for (const [a, b, c] of tris) { tri(arr, P0[a], P0[b], P0[c]); tri(arr, P1[a], P1[c], P1[b]); }
+  for (let i = 0; i < poly.length; i++) { const j = (i + 1) % poly.length; quad(arr, P0[i], P0[j], P1[j], P1[i]); }
+}
+function hexa(arr, b0, b1, b2, b3, t0, t1, t2, t3) {
+  quad(arr, b0, b1, b2, b3); quad(arr, t0, t3, t2, t1);
+  quad(arr, b0, t0, t1, b1); quad(arr, b1, t1, t2, b2); quad(arr, b2, t2, t3, b3); quad(arr, b3, t3, t0, b0);
+}
+// box whose x-faces follow the skewed support lines
+function boxS(arr, x0, x1, y0, y1, z0, z1) {
+  const P = (x, y, z) => [x + sx(z), y, z];
+  hexa(arr, P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1), P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1));
+}
+const deckMap = (x0, x1) => (z, y, t) => [(t ? x1 : x0) + sx(z), y, z];
+const alongSupport = (z0, z1) => (x, y, t) => { const z = t ? z1 : z0; return [x + sx(z), y, z]; };
+
+/* ---------- dimensions read from the drawings (m) ---------- */
+const D = {
+  bridgeLen: 19.2, gEnd0: 0.03, gEnd1: 19.17, brg0: 0.33, brg1: 18.87,
+  width: 11.0, girderZ: [0, 1, 2, 3, 4, 5].map(i => 0.9 + i * 1.84),
+  slabTop: -0.15, slabBot: -0.33, girderBot: -1.2, seat: -1.27,
+  hwl: -4.7, bank: -3.9, bed: -6.1,
+};
+// PC T-girder web/bulb below the slab (offsets from girder axis)
+const GIRDER = [[-0.40, -0.33], [0.40, -0.33], [0.09, -0.45], [0.09, -0.95], [0.28, -1.07], [0.28, -1.2], [-0.28, -1.2], [-0.28, -1.07], [-0.09, -0.95], [-0.09, -0.45]];
+// deck surface profiles in (z, y)
+const crown = z => -0.015 * Math.abs(z - ZC);
+const P_PAVE = [[0.6, -0.15], [8.1, -0.15], [8.1, crown(8.1)], [ZC, 0], [0.6, crown(0.6)]];
+const P_CURB_L = [[0, -0.15], [0.6, -0.15], [0.6, 0.19], [0, 0.19]];
+const P_CURB_M = [[8.1, -0.15], [8.3, -0.15], [8.3, 0.2], [8.1, 0.2]];
+const P_WALK = [[8.3, -0.15], [10.6, -0.15], [10.6, 0.006], [8.3, -0.04]];
+const P_CURB_R = [[10.6, -0.15], [11, -0.15], [11, 0.11], [10.6, 0.11]];
+
+const A1_BACK = -0.5, A2_BACK = 19.75, COR0 = -0.6, COR1 = 11.6;   // abutment back faces / abutment extent across the deck
+
+/* ---------- build ---------- */
+const root = new THREE.Group();
+root.position.set(-9.6, 0, -5.5);
+scene.add(root);
+const G = {};
+let labels = [];
+const pickables = [];
+
+function addMesh(group, arr, mat, label, info, edges = true) {
+  const g = geom(arr);
+  const m = new THREE.Mesh(g, mat);
+  m.castShadow = true; m.receiveShadow = true;
+  m.userData = { label, info };
+  group.add(m);
+  pickables.push(m);
+  if (edges) {
+    const e = new THREE.LineSegments(new THREE.EdgesGeometry(g, 28), edgeMat);
+    e.userData.isEdge = true;
+    group.add(e);
+  }
+  return m;
+}
+
+function railing(arr, z, yBase, h, rails, balusters) {
+  const x0 = 0.18, x1 = 19.02, n = Math.round((x1 - x0) / 2);
+  for (let i = 0; i <= n; i++) { const xp = x0 + i * (x1 - x0) / n; boxS(arr, xp - 0.06, xp + 0.06, yBase, yBase + h, z - 0.06, z + 0.06); }
+  for (const r of rails) boxS(arr, x0, x1, yBase + r - 0.04, yBase + r + 0.04, z - 0.045, z + 0.045);
+  if (balusters) for (let xp = x0 + 0.15; xp < x1 - 0.1; xp += 0.15) boxS(arr, xp - 0.012, xp + 0.012, yBase + 0.1, yBase + h - 0.05, z - 0.012, z + 0.012);
+}
+
+function wing(arr, xa, xb, zIn, zOut, yTi, yTo, yBi, yBo) {
+  const P = (x, y, z) => [x + sx(z), y, z];
+  hexa(arr, P(xa, yBi, zIn), P(xb, yBi, zIn), P(xb, yBo, zOut), P(xa, yBo, zOut),
+            P(xa, yTi, zIn), P(xb, yTi, zIn), P(xb, yTo, zOut), P(xa, yTo, zOut));
+}
+
+function buildSuper(g) {
+  let a = [];
+  for (const zc of D.girderZ) prism(a, GIRDER.map(([dz, y]) => [zc + dz, y]), deckMap(D.gEnd0, D.gEnd1));
+  addMesh(g, a, M.pc, '主桁（PC T桁）', '6本 @1,840 mm・桁高 1,050 mm・桁長 19,140 mm');
+  a = []; prism(a, [[0, D.slabBot], [11, D.slabBot], [11, D.slabTop], [0, D.slabTop]], deckMap(D.gEnd0, D.gEnd1));
+  addMesh(g, a, M.slab, '床版（T桁フランジ＋間詰め）', '全幅 11,000 mm・厚さ約 180 mm（推定）');
+  a = []; prism(a, P_PAVE, deckMap(0, D.bridgeLen));
+  addMesh(g, a, M.asphalt, '車道（アスファルト舗装）', '幅員 7,500 mm（4,000＋3,500）・横断勾配 1.5%');
+  a = []; prism(a, P_CURB_L, deckMap(D.gEnd0, D.gEnd1)); prism(a, P_CURB_R, deckMap(D.gEnd0, D.gEnd1));
+  addMesh(g, a, M.curb, '地覆', '車道側 600 mm・歩道側 400 mm');
+  a = []; prism(a, P_CURB_M, deckMap(D.gEnd0, D.gEnd1));
+  addMesh(g, a, M.curb, '歩車道境界', '幅 200 mm');
+  a = []; prism(a, P_WALK, deckMap(D.gEnd0, D.gEnd1));
+  addMesh(g, a, M.walk, '歩道', '幅員 2,300 mm・横断勾配 2.0%');
+  a = [];
+  for (const [xc, th] of [[0.23, 0.4], [3.4, 0.25], [9.6, 0.25], [15.8, 0.25], [18.97, 0.4]])
+    boxS(a, xc - th / 2, xc + th / 2, -1.0, D.slabBot, D.girderZ[0], D.girderZ[5]);
+  addMesh(g, a, M.slab, '横桁', '端横桁2・中間横桁3（位置は側面図から読み取り、厚さは推定）');
+  a = [];
+  for (const zc of D.girderZ) for (const xb of [D.brg0, D.brg1]) boxS(a, xb - 0.22, xb + 0.22, D.seat, D.girderBot, zc - 0.25, zc + 0.25);
+  addMesh(g, a, M.rubber, '支承', '桁端から 300 mm・支間 18,540 mm', false);
+  a = []; railing(a, 0.3, 0.19, 0.85, [0.45, 0.8], false);
+  addMesh(g, a, M.steel, '車両用防護柵（簡略表現）', '地覆 600 mm 上に設置', false);
+  a = []; railing(a, 10.8, 0.11, 1.1, [0.1, 1.05], true);
+  addMesh(g, a, M.steel, '歩行者用高欄（簡略表現）', '地覆 400 mm 上に設置・高さ約 1.1 m', false);
+}
+
+function buildSub(g) {
+  let a = [];
+  prism(a, [[A1_BACK, -0.08], [0, -0.08], [0, D.seat], [0.8, D.seat], [0.8, -6.0], [A1_BACK, -6.0]], alongSupport(COR0, COR1));
+  addMesh(g, a, M.rc, 'A1 橋台（逆T式）', '高さ 7,000 mm（路面〜フーチング下面）');
+  a = []; boxS(a, -2.25, 1.75, -7.0, -6.0, -1.0, 12.0);
+  addMesh(g, a, M.footing, 'A1 フーチング', '幅 4,000 mm（側面図）・厚さ約 1,000 mm');
+  a = [];
+  prism(a, [[A2_BACK, -0.08], [19.2, -0.08], [19.2, D.seat], [18.6, D.seat], [18.6, -8.0], [A2_BACK, -8.0]], alongSupport(COR0, COR1));
+  addMesh(g, a, M.rc, 'A2 橋台（逆T式）', '高さ 9,000 mm（路面〜フーチング下面）');
+  a = []; boxS(a, 17.2, 22.2, -9.0, -8.0, -1.0, 12.0);
+  addMesh(g, a, M.footing, 'A2 フーチング', '幅 5,000 mm（側面図）・厚さ約 1,000 mm');
+}
+
+function dimLine(arr, A, B, tick) {
+  arr.push(...A, ...B);
+  for (const P of [A, B]) arr.push(P[0] - tick[0], P[1] - tick[1], P[2] - tick[2], P[0] + tick[0], P[1] + tick[1], P[2] + tick[2]);
+}
+function addLabel(group, p, html, cls) {
+  const el = document.createElement('div');
+  el.className = 'lbl ' + (cls || '');
+  el.innerHTML = html;
+  el.hidden = true;
+  $('#labels').appendChild(el);
+  labels.push({ el, local: new THREE.Vector3(...p), group });
+}
+function buildDims(g) {
+  const a = [];
+  const zD = 12.4, X = (x, z) => x + sx(z);
+  dimLine(a, [X(0, zD), 1.9, zD], [X(D.bridgeLen, zD), 1.9, zD], [0, 0.25, 0]);
+  dimLine(a, [X(D.brg0, zD), 1.35, zD], [X(D.brg1, zD), 1.35, zD], [0, 0.2, 0]);
+  dimLine(a, [-5.5, 1.3, 0], [-5.5, 1.3, 11], [0, 0.25, 0]);
+  const zH = 13.2;
+  dimLine(a, [X(-2.6, zH), -7.0, zH], [X(-2.6, zH), 0, zH], [0.25, 0, 0]);
+  dimLine(a, [X(22.6, zH), -9.0, zH], [X(22.6, zH), 0, zH], [0.25, 0, 0]);
+  const lg = new THREE.BufferGeometry();
+  lg.setAttribute('position', new THREE.Float32BufferAttribute(a, 3));
+  const ls = new THREE.LineSegments(lg, dimMat);
+  ls.renderOrder = 10;
+  g.add(ls);
+  addLabel(g, [X(9.6, zD), 2.25, zD], '橋長 19,200', 'dim');
+  addLabel(g, [X(9.6, zD), 1.7, zD], '支間 18,540', 'dim');
+  addLabel(g, [-5.5, 1.65, 5.5], '全幅員 11,000', 'dim');
+  addLabel(g, [X(-2.6, zH), -3.2, zH], 'A1 H=7,000', 'dim');
+  addLabel(g, [X(22.6, zH), -4.2, zH], 'A2 H=9,000', 'dim');
+  addLabel(g, [X(-0.25, COR1), 0.75, COR1], 'A1', 'tag');
+  addLabel(g, [X(19.47, COR1), 0.75, COR1], 'A2', 'tag');
+  addLabel(g, [X(9.6, 2.6), 0.35, 2.6], '車道 7,500');
+  addLabel(g, [X(9.6, 9.45), 0.45, 9.45], '歩道 2,300');
+}
+
+function disposeGroup(g) {
+  g.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  root.remove(g);
+}
+function build() {
+  for (const k of Object.keys(G)) disposeGroup(G[k]);
+  pickables.length = 0;
+  for (const l of labels) l.el.remove();
+  labels = [];
+  for (const k of ['super', 'sub', 'dims']) { G[k] = new THREE.Group(); root.add(G[k]); }
+  buildSuper(G.super); buildSub(G.sub); buildDims(G.dims);
+  applyLayers(); applyEdges();
+  root.updateMatrixWorld(true);
+}
+
+/* ---------- UI wiring ---------- */
+const layerIds = { super: '#ly-super', sub: '#ly-sub', dims: '#ly-dims' };
+function applyLayers() { for (const [k, id] of Object.entries(layerIds)) if (G[k]) G[k].visible = $(id).checked; }
+function applyEdges() { const on = $('#ly-edges').checked; root.traverse(o => { if (o.userData.isEdge) o.visible = on; }); }
+for (const id of Object.values(layerIds)) $(id).addEventListener('change', applyLayers);
+$('#ly-edges').addEventListener('change', applyEdges);
+
+const cutPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+function applyCut() {
+  const on = $('#cut-on').checked, c = +$('#cut-x').value;
+  $('#cut-x').disabled = !on;
+  $('#cut-out').textContent = c.toFixed(3) + ' m';
+  cutPlane.constant = -(c - 9.6);
+  renderer.clippingPlanes = on ? [cutPlane] : [];
+}
+$('#cut-on').addEventListener('change', applyCut);
+$('#cut-x').addEventListener('input', applyCut);
+
+$('#skew-on').addEventListener('change', e => {
+  K = e.target.checked ? 1 / Math.tan(SKEW_DEG * Math.PI / 180) : 0;
+  $('#tb-skew').textContent = e.target.checked ? '63.5°（推定）' : '90°（直橋表示）';
+  build();
+});
+
+/* projection + view presets */
+function aspect() { return stage.clientWidth / Math.max(1, stage.clientHeight); }
+function updateOrtho() {
+  const a = aspect();
+  ortho.left = -orthoHalfH * a; ortho.right = orthoHalfH * a; ortho.top = orthoHalfH; ortho.bottom = -orthoHalfH;
+  ortho.updateProjectionMatrix();
+}
+function setProjection(toOrtho, fit) {
+  const t = controls.target;
+  if (toOrtho) {
+    const dist = camera.position.distanceTo(t);
+    orthoHalfH = fit ? Math.max(fit[1] / 2, fit[0] / 2 / aspect()) : (camera === ortho ? orthoHalfH / ortho.zoom : dist * Math.tan(THREE.MathUtils.degToRad(persp.fov / 2)));
+    ortho.position.copy(camera.position); ortho.zoom = 1; updateOrtho();
+    camera = ortho;
+  } else {
+    if (camera === ortho) {
+      const dir = ortho.position.clone().sub(t).normalize();
+      const dist = (orthoHalfH / ortho.zoom) / Math.tan(THREE.MathUtils.degToRad(persp.fov / 2));
+      persp.position.copy(t).addScaledVector(dir, dist);
+    }
+    camera = persp;
+  }
+  controls.object = camera;
+  $('#ortho').checked = toOrtho;
+  controls.update();
+}
+$('#ortho').addEventListener('change', e => setProjection(e.target.checked));
+
+const VIEWS = {
+  iso:     { pos: [-24, 9, 30], target: [2, -3.8, 0], ortho: false },
+  side:    { pos: [4.5, -3.8, 80], target: [4.5, -3.8, 0], ortho: true, fit: [44, 14] },
+  plan:    { pos: [4.5, 80, 0.001], target: [4.5, -3, 0], ortho: true, fit: [46, 30] },
+  section: { pos: [-80, -0.9, 2.4], target: [0, -0.9, 2.4], ortho: true, fit: [19, 6], cut: 9.6 },
+};
+let tween = null;
+function goView(name) {
+  const v = VIEWS[name];
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+  if (v.cut != null) { $('#cut-on').checked = true; $('#cut-x').value = v.cut; }
+  else $('#cut-on').checked = false;
+  applyCut();
+  if (v.ortho) { setProjection(true, v.fit); }
+  else { if (camera === ortho) setProjection(false); }
+  const p0 = camera.position.clone(), t0 = controls.target.clone();
+  const p1 = new THREE.Vector3(...v.pos), t1 = new THREE.Vector3(...v.target);
+  if (v.ortho) { const dir = p1.clone().sub(t1); p1.copy(t1).add(dir); }
+  tween = { p0, t0, p1, t1, start: performance.now(), dur: reduceMotion ? 0 : 700 };
+}
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
+controls.addEventListener('start', () => { tween = null; });
+
+/* theme */
+function applyTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  scene.background = new THREE.Color(cs.getPropertyValue('--scene').trim() || '#dde4e2');
+  dimMat.color.set(cs.getPropertyValue('--accent').trim() || '#1c5b84');
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+/* hover / tap info */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tip = $('#tip');
+let pointer = null, downAt = null;
+function pick(cx, cy) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const vis = pickables.filter(m => m.parent && m.parent.visible);
+  const cutOn = $('#cut-on').checked, cw = +$('#cut-x').value - 9.6;
+  const hits = ray.intersectObjects(vis, false).filter(h => !cutOn || h.point.x >= cw - 1e-3);
+  return hits.length ? hits[0].object.userData : null;
+}
+function showTip(cx, cy) {
+  const d = pick(cx, cy);
+  if (!d || !d.label) { tip.hidden = true; return; }
+  tip.innerHTML = `<b>${d.label}</b>${d.info ? `<span>${d.info}</span>` : ''}`;
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  const x = Math.min(cx + 14, innerWidth - w - 8), y = Math.min(cy + 14, innerHeight - h - 8);
+  tip.style.transform = `translate(${x}px,${y}px)`;
+}
+const cvs = renderer.domElement;
+cvs.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && e.buttons === 0) pointer = [e.clientX, e.clientY]; else tip.hidden = true; });
+cvs.addEventListener('pointerleave', () => { pointer = null; tip.hidden = true; });
+cvs.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
+cvs.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'mouse' && downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 6) showTip(e.clientX, e.clientY);
+});
+
+/* labels */
+const tv = new THREE.Vector3();
+function updateLabels() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const cutOn = $('#cut-on').checked, cw = +$('#cut-x').value - 9.6;
+  for (const l of labels) {
+    if (!l.group.visible) { l.el.hidden = true; continue; }
+    tv.copy(l.local); root.localToWorld(tv);
+    if (cutOn && tv.x < cw) { l.el.hidden = true; continue; }
+    tv.project(camera);
+    if (tv.z > 1 || tv.z < -1 || Math.abs(tv.x) > 1.05 || Math.abs(tv.y) > 1.05) { l.el.hidden = true; continue; }
+    l.el.hidden = false;
+    l.el.style.transform = `translate(${(tv.x + 1) / 2 * w}px,${(1 - tv.y) / 2 * h}px) translate(-50%,-100%)`;
+  }
+}
+
+/* resize + loop */
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  persp.aspect = w / Math.max(1, h); persp.updateProjectionMatrix();
+  updateOrtho();
+}
+addEventListener('resize', resize);
+
+function loop(now) {
+  if (tween) {
+    const k = tween.dur ? Math.min(1, (now - tween.start) / tween.dur) : 1;
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    camera.position.lerpVectors(tween.p0, tween.p1, e);
+    controls.target.lerpVectors(tween.t0, tween.t1, e);
+    if (k >= 1) tween = null;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  if (pointer) { showTip(pointer[0], pointer[1]); pointer = null; }
+  requestAnimationFrame(loop);
+}
+
+if (innerWidth < 720) { $('#panel').open = false; }
+applyTheme();
+build();
+applyCut();
+resize();
+$('#loading').remove();
+requestAnimationFrame(loop);
+</script>
+
+</body></html>
